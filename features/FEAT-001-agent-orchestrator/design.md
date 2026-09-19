@@ -16,19 +16,18 @@ sequenceDiagram
     User->>API: Send Message
     API->>Orch: Dispatch Request
     Orch->>DB: Load Session Context
-    loop ReAct Loop (Max 5 times)
+    loop ReAct Loop (Max 5 iterations)
         Orch->>LLM: Prompt + Context + Available Tools
-        LLM-->>Orch: Response (Action / Answer)
-        alt Action Required (Tool Call)
+        LLM-->>Orch: Response (Action or Final Answer)
+        alt Tool Call Required
             Orch->>Tools: Execute Tool (Name, Args)
             Tools-->>Orch: Tool Result
             Orch->>Orch: Append Observation to Context
-        else Answer Ready
-            Orch->>Orch: Extract Final Answer
-            break
+        else Final Answer Ready
+            Note over Orch: Exit ReAct Loop
         end
     end
-    Orch->>DB: Save updated Context
+    Orch->>DB: Save Updated Context
     Orch-->>API: Final Answer
     API-->>User: Response Message
 ```

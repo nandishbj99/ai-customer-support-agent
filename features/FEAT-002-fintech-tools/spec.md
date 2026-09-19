@@ -1,7 +1,21 @@
 # FEAT-002-fintech-tools: Fintech Tool Layer Specification
 
-## 1. Overview
-This feature implements the Deterministic API Layer (Fintech Tools) for the AI Customer Support Agent. The LLM never interacts with the database directly; instead, it uses Gemini's function calling feature to invoke these explicitly defined tools. This layer enforces business rules, access control, rate limiting, and structured data access to various fintech subdomains (payments, accounts, transactions, fraud, etc.).
+> **Feature ID:** `FEAT-002-fintech-tools`  
+> **Status:** `PROPOSED`  
+> **Created Date:** 2026-09-18  
+> **Last Updated:** 2026-09-19  
+> **Parent Spec:** [Master Project Spec](../../specs/main-spec.md)
+
+---
+
+## 1. Overview & Objective
+This feature implements the Deterministic API Layer (Fintech Tools) for the AI Customer Support Agent using the **Adapter Pattern**. The LLM never interacts with the database or external APIs directly; instead, it uses Gemini's function calling feature to invoke tools through abstract interfaces.
+
+Each tool has two swappable implementations:
+- **Mock Adapter:** Queries local PostgreSQL seed data (dev/demo/testing)
+- **Live Adapter:** Calls real external fintech APIs like Razorpay, banking APIs, Freshdesk, Twilio (production)
+
+The agent and tool router are completely agnostic to which adapter is active — they always call the same interface. The active mode is controlled by a `TOOL_MODE` environment variable (`mock`, `live`, or `hybrid`).
 
 ## 2. Functional Requirements (Tools)
 
@@ -122,3 +136,59 @@ Example Response:
 - All tool invocations must validate `user_id` authorization against the active session.
 - Write operations (refunds, tickets) are rate-limited per user to prevent spam (e.g., max 3 tickets per hour).
 - Read operations are rate-limited to 50 calls per minute per session.
+
+---
+
+## 5. Adapter Pattern Requirements
+
+### FR-14: Abstract Tool Interfaces
+- **Description:** Each tool MUST define an abstract base class (ABC) with the tool's method signature.
+- **Implementation:** Use Python `abc.ABC` and `@abstractmethod` decorators.
+- **Rationale:** Enforces interface contracts. Both mock and live adapters must implement the same methods.
+
+### FR-15: Mock Adapters (Dev/Demo Mode)
+- **Description:** Mock adapters query local PostgreSQL seed data via SQLAlchemy.
+- **Scope:** All 13 tools must have mock adapter implementations.
+- **Seed Data:** 15+ realistic scenarios covering payment failures, fraud flags, pending refunds, account states.
+- **Activation:** `TOOL_MODE=mock` environment variable.
+
+### FR-16: Live Adapters (Production Mode)
+- **Description:** Live adapters call real external fintech APIs via `httpx.AsyncClient`.
+- **Provider Mapping:**
+
+| Tool | Live Provider |
+| :--- | :--- |
+| `getTransaction`, `getPaymentStatus`, `getRefundStatus`, `initiateRefund` | Razorpay API |
+| `getAccount`, `getAccountBalance` | Core Banking API |
+| `checkFraudStatus` | Internal Fraud Detection ML Service |
+| `createSupportTicket` | Freshdesk API |
+| `sendNotification` | Twilio (SMS) + AWS SES (Email) |
+| `getCustomerProfile` | Core Banking API / CRM |
+| `searchPolicy` | FEAT-003 RAG Engine (same in both modes) |
+| `escalateToHumanAgent` | FEAT-004 HITL System (same in both modes) |
+
+- **Activation:** `TOOL_MODE=live` environment variable.
+
+### FR-17: Hybrid Mode
+- **Description:** Mix mock and live adapters per tool. Useful for staging when some external APIs are available but not all.
+- **Configuration:** Per-tool override via `TOOL_MODE_<TOOL_NAME>=live|mock` environment variables.
+- **Activation:** `TOOL_MODE=hybrid` environment variable.
+
+### FR-18: Tool Service Factory
+- **Description:** A factory class that reads `TOOL_MODE` config and instantiates the correct adapter for each tool.
+- **Dependency Injection:** Factory provides adapters to the Tool Router via FastAPI dependency injection.
+
+### FR-19: Circuit Breaker & Retry (Live Mode)
+- **Description:** All live adapters must implement circuit breaker and retry logic.
+- **Circuit Breaker:** `pybreaker` — opens after 5 consecutive failures, resets after 60 seconds.
+- **Retry:** `tenacity` — exponential backoff, max 3 retries for 5xx/timeout errors. No retry for 4xx.
+- **Fallback:** When circuit is open, return `ToolResult(success=False, error={"code": "SERVICE_UNAVAILABLE"})`.
+
+### FR-20: Response Normalization & Caching (Live Mode)
+- **Description:** Each live adapter must normalize provider-specific responses into the standard `ToolResult` schema. The agent never sees Razorpay/Bank-specific JSON formats.
+- **Caching:** Redis TTL cache for read-heavy tools:
+  - `getAccount`: 30 second TTL
+  - `getAccountBalance`: 10 second TTL
+  - `getCustomerProfile`: 60 second TTL
+  - Write tools: never cached
+

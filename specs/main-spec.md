@@ -1,6 +1,6 @@
 # Project Master Specification: AI Customer Support Agent
 
-> **Last Updated:** 2026-09-18  
+> **Last Updated:** 2026-09-19  
 > **Status:** Active / Living Document  
 > **Repository Root:** `c:\Users\nandi\Documents\projects\ai-customer-support-agent`
 
@@ -36,14 +36,20 @@ flowchart TB
     AuditLog["📋 Audit Logger\n(Structured Logging)"]
     HumanAgent["👨‍💼 Human Agent\n(Approval Dashboard)"]
 
-    subgraph ToolAPIs["Deterministic Tool APIs"]
-        PaymentAPI["💳 Payment API"]
-        AccountAPI["🏦 Account API"]
-        TransactionAPI["📊 Transaction API"]
-        FraudAPI["🛡️ Fraud API"]
-        RefundAPI["💰 Refund API"]
-        TicketAPI["🎫 Ticket API"]
-        NotificationAPI["📧 Notification API"]
+    subgraph AdapterLayer["Tool Adapter Layer"]
+        direction TB
+        Interfaces["Abstract Interfaces\n(ABCs)"]
+        
+        subgraph MockMode["🧪 Mock Adapters\n(TOOL_MODE=mock)"]
+            MockServices["MockTransactionService\nMockAccountService\nMockPaymentService\n..."]
+        end
+        
+        subgraph LiveMode["🏦 Live Adapters\n(TOOL_MODE=live)"]
+            LiveServices["RazorpayService\nCoreBankingService\nFreshdeskService\n..."]
+        end
+        
+        Interfaces --> MockMode
+        Interfaces --> LiveMode
     end
 
     subgraph DataStores["Data Stores"]
@@ -52,16 +58,24 @@ flowchart TB
         ChromaDB[("🔍 ChromaDB\n(Policy Embeddings)")]
     end
 
+    subgraph ExternalAPIs["External APIs (Live Mode)"]
+        Razorpay["💳 Razorpay"]
+        BankAPI["🏦 Core Banking"]
+        Freshdesk["🎫 Freshdesk"]
+        Twilio["📧 Twilio/SES"]
+    end
+
     Customer --> ConvAPI
     ConvAPI --> AgentCore
     AgentCore --> ToolRouter
     AgentCore --> RAG
     AgentCore --> HITL
     AgentCore --> AuditLog
-    ToolRouter --> ToolAPIs
+    ToolRouter --> Interfaces
     HITL --> HumanAgent
     HumanAgent --> HITL
-    ToolAPIs --> DataStores
+    MockMode --> PostgreSQL
+    LiveMode --> ExternalAPIs
     RAG --> ChromaDB
     ConvAPI --> Redis
     AuditLog --> PostgreSQL
@@ -73,7 +87,7 @@ flowchart TB
 | :--- | :--- | :--- |
 | **Conversation API** | Python 3.12+, FastAPI, WebSocket | Customer-facing REST + WebSocket interface, session management |
 | **Agent Orchestrator** | Google Gemini API (google-genai SDK), ReAct loop | LLM reasoning, tool selection, multi-step planning, state management |
-| **Tool Layer** | FastAPI internal services, SQLAlchemy | Deterministic API tools (payment, account, transaction, fraud, refund, ticket, notification) |
+| **Tool Layer** | Adapter Pattern, Pydantic, SQLAlchemy (mock) / httpx (live) | Deterministic API tools with swappable mock/live backends |
 | **RAG Engine** | ChromaDB, Google text-embedding, LangChain | Policy document ingestion, semantic search, context retrieval |
 | **HITL Approval** | Celery, Redis (broker), FastAPI (dashboard) | Approval queue, threshold routing, timeout escalation |
 | **Security & Audit** | JWT/OAuth2, structlog, PostgreSQL | Authentication, authorization, PII masking, audit trail |
@@ -85,19 +99,25 @@ flowchart TB
 ## 3. Global Architectural Principles & Constraints
 
 1. **Spec-First & ADR-First:** Every non-trivial feature must define its specification, design, and Architectural Decision Records (ADRs) before code execution.
-2. **Agent Safety — Read-First, Write-With-Approval:** The LLM agent NEVER directly modifies the database. It requests tools. Write operations (refunds, ticket creation) go through approval if they exceed thresholds.
-3. **Deterministic Tools Only:** All tool APIs are deterministic functions with well-defined inputs/outputs. The LLM does not have raw database access.
-4. **Human-in-the-Loop Thresholds:**
+2. **Agent Safety — Read-First, Write-With-Approval:** The LLM agent NEVER directly modifies the database or calls external APIs. It requests tools. Write operations (refunds, ticket creation) go through approval if they exceed thresholds.
+3. **Deterministic Tools Only:** All tool APIs are deterministic functions with well-defined inputs/outputs. The LLM does not have raw database or external API access.
+4. **Adapter Pattern for Tool Layer:** Every tool defines an abstract interface (ABC) with two implementations:
+   - **Mock Adapter** — queries local PostgreSQL seed data (dev/demo/testing)
+   - **Live Adapter** — calls real external fintech APIs (production)
+   - Mode is controlled by `TOOL_MODE` environment variable (`mock`, `live`, `hybrid`)
+   - The agent and tool router are completely agnostic to which adapter is active
+5. **Human-in-the-Loop Thresholds:**
    - Refund > ₹10,000 → Requires human approval
    - Account closure → Always requires human approval
    - Large transaction reversal (> ₹50,000) → Requires human approval
    - Fraud flag override → Requires human approval
-5. **Modular Isolation:** Each tool is an independent service with clear input/output contracts. Tools can be tested and deployed independently.
-6. **Traceable Testing:** Every task in a feature plan maps to a verification test case.
-7. **Audit Everything:** Every tool call, LLM decision, approval request, and response is logged with timestamps, session IDs, and user context.
-8. **PII Protection:** Customer PII (Aadhaar, PAN, full account numbers) is masked in logs and LLM context. Only last-4-digits are shown.
-9. **Stateless Authentication:** JWT-based auth for customers; OAuth2 for human agents.
-10. **Graceful Degradation:** If the LLM is unavailable, the system falls back to rule-based responses and escalates to human agents.
+6. **Modular Isolation:** Each tool is an independent service with clear input/output contracts. Tools can be tested and deployed independently.
+7. **Traceable Testing:** Every task in a feature plan maps to a verification test case.
+8. **Audit Everything:** Every tool call, LLM decision, approval request, and response is logged with timestamps, session IDs, and user context.
+9. **PII Protection:** Customer PII (Aadhaar, PAN, full account numbers) is masked in logs and LLM context. Only last-4-digits are shown.
+10. **Stateless Authentication:** JWT-based auth for customers; OAuth2 for human agents.
+11. **Graceful Degradation:** If the LLM is unavailable, the system falls back to rule-based responses and escalates to human agents.
+12. **Resilience (Live Mode):** Circuit breakers, exponential retry, response caching, and outbound rate limiting for external API integrations.
 
 ---
 
