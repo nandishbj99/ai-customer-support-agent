@@ -1,0 +1,178 @@
+# Project Master Specification: AI Customer Support Agent
+
+> **Last Updated:** 2026-09-18  
+> **Status:** Active / Living Document  
+> **Repository Root:** `c:\Users\nandi\Documents\projects\ai-customer-support-agent`
+
+---
+
+## 1. Executive Summary & Vision
+
+- **Product Overview:** An intelligent, AI-powered customer support agent for fintech platforms that investigates and resolves customer queries by autonomously orchestrating deterministic tool calls against backend systems (payment, account, transaction, fraud, refund APIs), augmented with RAG-based policy search and governed by human-in-the-loop approval workflows for sensitive operations.
+
+- **Target Audience:**
+  - **Primary:** Fintech customers seeking support (payment failures, account inquiries, refund requests, fraud concerns)
+  - **Secondary:** Human support agents who approve sensitive operations and handle escalations
+  - **Tertiary:** Operations/compliance teams monitoring audit logs and agent performance
+
+- **Core Value Proposition:**
+  1. **Investigative Resolution:** The agent doesn't just answer — it *investigates* by calling real APIs, correlating data across systems, and providing root-cause explanations.
+  2. **Human-in-the-Loop Safety:** Sensitive operations (refunds > ₹10,000, account closures, large reversals) require explicit human approval before execution.
+  3. **Full Auditability:** Every agent action, tool call, decision, and approval is logged for compliance and debugging.
+  4. **Sub-second Tool Calls:** Deterministic APIs respond in < 200ms; end-to-end agent responses target < 5 seconds for typical queries.
+
+---
+
+## 2. High-Level System Architecture
+
+```mermaid
+flowchart TB
+    Customer["🧑 Customer\n(Web/Mobile/API)"]
+    ConvAPI["🌐 Conversation API\n(FastAPI WebSocket + REST)"]
+    AgentCore["🤖 Agent Orchestrator\n(ReAct Loop + Gemini LLM)"]
+    ToolRouter["🔧 Tool Router\n(Function Calling Dispatcher)"]
+    RAG["📚 RAG Engine\n(ChromaDB + Embeddings)"]
+    HITL["👤 HITL Approval\n(Celery + Approval Queue)"]
+    AuditLog["📋 Audit Logger\n(Structured Logging)"]
+    HumanAgent["👨‍💼 Human Agent\n(Approval Dashboard)"]
+
+    subgraph ToolAPIs["Deterministic Tool APIs"]
+        PaymentAPI["💳 Payment API"]
+        AccountAPI["🏦 Account API"]
+        TransactionAPI["📊 Transaction API"]
+        FraudAPI["🛡️ Fraud API"]
+        RefundAPI["💰 Refund API"]
+        TicketAPI["🎫 Ticket API"]
+        NotificationAPI["📧 Notification API"]
+    end
+
+    subgraph DataStores["Data Stores"]
+        PostgreSQL[("🐘 PostgreSQL\n(Transactions, Users, Tickets)")]
+        Redis[("⚡ Redis\n(Sessions, Cache, Queue)")]
+        ChromaDB[("🔍 ChromaDB\n(Policy Embeddings)")]
+    end
+
+    Customer --> ConvAPI
+    ConvAPI --> AgentCore
+    AgentCore --> ToolRouter
+    AgentCore --> RAG
+    AgentCore --> HITL
+    AgentCore --> AuditLog
+    ToolRouter --> ToolAPIs
+    HITL --> HumanAgent
+    HumanAgent --> HITL
+    ToolAPIs --> DataStores
+    RAG --> ChromaDB
+    ConvAPI --> Redis
+    AuditLog --> PostgreSQL
+```
+
+### Component Boundaries & Tech Stack
+
+| Subsystem | Technology Stack | Primary Responsibility |
+| :--- | :--- | :--- |
+| **Conversation API** | Python 3.12+, FastAPI, WebSocket | Customer-facing REST + WebSocket interface, session management |
+| **Agent Orchestrator** | Google Gemini API (google-genai SDK), ReAct loop | LLM reasoning, tool selection, multi-step planning, state management |
+| **Tool Layer** | FastAPI internal services, SQLAlchemy | Deterministic API tools (payment, account, transaction, fraud, refund, ticket, notification) |
+| **RAG Engine** | ChromaDB, Google text-embedding, LangChain | Policy document ingestion, semantic search, context retrieval |
+| **HITL Approval** | Celery, Redis (broker), FastAPI (dashboard) | Approval queue, threshold routing, timeout escalation |
+| **Security & Audit** | JWT/OAuth2, structlog, PostgreSQL | Authentication, authorization, PII masking, audit trail |
+| **Data & Storage** | PostgreSQL (SQLAlchemy + Alembic), Redis | Relational data, cache, sessions, message broker |
+| **Infrastructure** | Docker, docker-compose | Containerized deployment, service orchestration |
+
+---
+
+## 3. Global Architectural Principles & Constraints
+
+1. **Spec-First & ADR-First:** Every non-trivial feature must define its specification, design, and Architectural Decision Records (ADRs) before code execution.
+2. **Agent Safety — Read-First, Write-With-Approval:** The LLM agent NEVER directly modifies the database. It requests tools. Write operations (refunds, ticket creation) go through approval if they exceed thresholds.
+3. **Deterministic Tools Only:** All tool APIs are deterministic functions with well-defined inputs/outputs. The LLM does not have raw database access.
+4. **Human-in-the-Loop Thresholds:**
+   - Refund > ₹10,000 → Requires human approval
+   - Account closure → Always requires human approval
+   - Large transaction reversal (> ₹50,000) → Requires human approval
+   - Fraud flag override → Requires human approval
+5. **Modular Isolation:** Each tool is an independent service with clear input/output contracts. Tools can be tested and deployed independently.
+6. **Traceable Testing:** Every task in a feature plan maps to a verification test case.
+7. **Audit Everything:** Every tool call, LLM decision, approval request, and response is logged with timestamps, session IDs, and user context.
+8. **PII Protection:** Customer PII (Aadhaar, PAN, full account numbers) is masked in logs and LLM context. Only last-4-digits are shown.
+9. **Stateless Authentication:** JWT-based auth for customers; OAuth2 for human agents.
+10. **Graceful Degradation:** If the LLM is unavailable, the system falls back to rule-based responses and escalates to human agents.
+
+---
+
+## 4. Master Feature Registry
+
+All active, upcoming, and completed features are tracked in [`features/`](../features/):
+
+| Feature ID | Feature Name | Owner / Lead | Status | Target Date | Spec Link |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `FEAT-001-agent-orchestrator` | Core Agent Orchestrator | Team | `PROPOSED` | TBD | [FEAT-001](../features/FEAT-001-agent-orchestrator/spec.md) |
+| `FEAT-002-fintech-tools` | Fintech Tool Layer | Team | `PROPOSED` | TBD | [FEAT-002](../features/FEAT-002-fintech-tools/spec.md) |
+| `FEAT-003-rag-knowledge-base` | RAG Knowledge Base | Team | `PROPOSED` | TBD | [FEAT-003](../features/FEAT-003-rag-knowledge-base/spec.md) |
+| `FEAT-004-hitl-approval` | Human-in-the-Loop Approval | Team | `PROPOSED` | TBD | [FEAT-004](../features/FEAT-004-hitl-approval/spec.md) |
+| `FEAT-005-security-audit` | Security & Audit Logging | Team | `PROPOSED` | TBD | [FEAT-005](../features/FEAT-005-security-audit/spec.md) |
+| `FEAT-006-conversation-api` | Conversation API & Interface | Team | `PROPOSED` | TBD | [FEAT-006](../features/FEAT-006-conversation-api/spec.md) |
+
+*Status Legend:* `PROPOSED` ➔ `DESIGN_READY` ➔ `IN_PROGRESS` ➔ `TESTING` ➔ `COMPLETED` ➔ `DEPRECATED`
+
+---
+
+## 5. Global API & Data Conventions
+
+- **API Standards:** RESTful JSON, ISO-8601 timestamps (IST/UTC), standardized error envelopes with `{ "status": "ERROR", "error_code": "...", "message": "...", "trace_id": "..." }`.
+- **Currency:** All monetary values in paise (integer) internally; formatted as ₹ for display. e.g., ₹5,000 = `500000` paise.
+- **Database Migrations:** Version-controlled via Alembic. All DDL in `migrations/` directory.
+- **Environment Variables:** All secrets loaded via `.env` files or secret manager. `.env.example` committed with placeholder values.
+- **Logging:** Structured JSON logging via `structlog`. Every log entry includes `trace_id`, `session_id`, `user_id`, `timestamp`.
+- **Error Codes:** Fintech-specific error codes (e.g., `PAYMENT_INSUFFICIENT_FUNDS`, `FRAUD_FLAGGED`, `REFUND_LIMIT_EXCEEDED`).
+
+---
+
+## 6. Agent Interaction Flow (End-to-End)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant API as Conversation API
+    participant Agent as Agent Orchestrator
+    participant Tools as Tool Router
+    participant PayAPI as Payment API
+    participant AccAPI as Account API
+    participant FraudAPI as Fraud API
+    participant RAG as Knowledge Base
+    participant HITL as HITL Approval
+    actor HumanAgent as Human Agent
+
+    Customer->>API: "Why did my ₹5,000 payment fail?"
+    API->>Agent: Route query + session context
+    
+    Note over Agent: ReAct Step 1: Reason about query
+    Agent->>Tools: getTransaction(user_id, amount=5000)
+    Tools->>PayAPI: Lookup transaction
+    PayAPI-->>Tools: {status: "FAILED", reason: "INSUFFICIENT_FUNDS", txn_id: "TXN123"}
+    Tools-->>Agent: Transaction details
+
+    Note over Agent: ReAct Step 2: Investigate further
+    Agent->>Tools: getAccount(user_id)
+    Tools->>AccAPI: Fetch account details
+    AccAPI-->>Tools: {balance: 3200, status: "ACTIVE", kyc: "VERIFIED"}
+    Tools-->>Agent: Account details
+
+    Note over Agent: ReAct Step 3: Check fraud
+    Agent->>Tools: checkFraudStatus(txn_id="TXN123")
+    Tools->>FraudAPI: Check fraud flags
+    FraudAPI-->>Tools: {is_flagged: false, risk_score: 0.12}
+    Tools-->>Agent: No fraud detected
+
+    Note over Agent: ReAct Step 4: Search policy
+    Agent->>Tools: searchPolicy("insufficient funds payment failure")
+    Tools->>RAG: Semantic search
+    RAG-->>Tools: Policy: "Payments fail when balance < amount..."
+    Tools-->>Agent: Policy context
+
+    Note over Agent: ReAct Step 5: Synthesize response
+    Agent-->>API: Comprehensive explanation + suggested actions
+    API-->>Customer: "Your ₹5,000 payment failed because your account balance was ₹3,200..."
+```
