@@ -2,7 +2,7 @@
 
 > **Feature ID:** `FEAT-002-fintech-tools`  
 > **Status:** `IN_PROGRESS`  
-> **Current Focus / Next Action:** `Phase 4: Mock Write Tools (TASK-11 to TASK-13)`  
+> **Current Focus / Next Action:** `Phase 5: Tool Service Factory & Router (TASK-14 to TASK-16)`  
 > **Owner:** `Team`  
 > **Last Updated:** 2026-09-22
 
@@ -12,10 +12,10 @@
 
 | Metric | Value |
 | :--- | :--- |
-| **Current Phase** | `Phase 4: Write Tools` |
-| **Tasks Completed** | 10 / 22 (45%) |
+| **Current Phase** | `Phase 5: Factory & Router` |
+| **Tasks Completed** | 13 / 22 (59%) |
 | **Blockers** | None |
-| **Ready for Next Phase?** | Yes (Phase 3 Complete) |
+| **Ready for Next Phase?** | Yes (Phase 4 Complete) |
 
 ---
 
@@ -25,7 +25,8 @@
 - [x] Action 3: Complete Phase 1 task execution (TASK-01 to TASK-05).
 - [x] Action 4: Implement Phase 2 Mock Adapters (TASK-06 to TASK-08).
 - [x] Action 5: Implement Phase 3 Investigation Tools (TASK-09 to TASK-10).
-- [ ] Action 6: Implement Phase 4 Mock Write Tools (TASK-11 to TASK-13).
+- [x] Action 6: Implement Phase 4 Mock Write Tools (TASK-11 to TASK-13).
+- [ ] Action 7: Implement Phase 5 Tool Service Factory & Router (TASK-14 to TASK-16).
 
 ---
 
@@ -68,14 +69,15 @@
   - *Validation:* `pytest tests/tools/mock/test_refund.py` (TC-08, TC-09)
 
 ### Phase 4: Mock Adapters — Write Tools
-- [ ] **TASK-11:** Implement `MockTicketService` (createSupportTicket)
+- [x] **TASK-11:** Implement `MockTicketService` (createSupportTicket)
   - *Files:* `app/tools/mock/ticket.py`
   - *Validation:* `pytest tests/tools/mock/test_ticket.py`
-- [ ] **TASK-12:** Implement `MockNotificationService` (sendNotification) — logs only in mock mode
+- [x] **TASK-12:** Implement `MockNotificationService` (sendNotification) — logs only in mock mode
   - *Files:* `app/tools/mock/notification.py`
   - *Validation:* `pytest tests/tools/mock/test_notification.py`
-- [ ] **TASK-13:** Implement `MockEscalationService` (escalateToHumanAgent)
+- [x] **TASK-13:** Implement `MockEscalationService` (escalateToHumanAgent)
   - *Files:* `app/tools/mock/escalation.py`
+  - *Validation:* `pytest tests/tools/mock/test_escalation.py`
 
 ### Phase 5: Tool Service Factory & Router
 - [ ] **TASK-14:** Implement `ToolServiceFactory` — reads `TOOL_MODE` env var and creates appropriate adapters
