@@ -78,12 +78,28 @@
 - [ ] **TASK-14:** Implement `ToolServiceFactory` — reads `TOOL_MODE` env var and creates appropriate adapters
   - *Files:* `app/tools/factory.py`
   - *Validation:* `pytest tests/tools/test_factory.py` — test mock, live, hybrid mode selection
-- [ ] **TASK-15:** Implement `ToolRouter` — maps tool name strings to service methods and dispatches calls
+- [ ] **TASK-15:** Implement `ToolRouter` with **session-injected `user_id`** and **idempotency key** support
   - *Files:* `app/agent/tool_router.py`
-  - *Validation:* `pytest tests/agent/test_tool_router.py`
-- [ ] **TASK-16:** Create `ToolRegistry` — consolidates all Pydantic schemas into Gemini-compatible function definitions
+  - *Details:* ToolRouter strips any `user_id` from LLM args and injects from authenticated session context. Write tools auto-generate idempotency keys via `sha256(session_id + tool_name + sorted_args)` and check Redis cache before execution.
+  - *Validation:* `pytest tests/agent/test_tool_router.py` — tenant isolation and idempotency tests pass
+- [ ] **TASK-16:** Create `ToolRegistry` — consolidates all Pydantic schemas into Gemini-compatible function definitions. **Ensure `user_id` is NOT in any tool schema exposed to the LLM.**
   - *Files:* `app/tools/registry.py`
-  - *Validation:* Verify generated JSON schemas match Gemini function calling format
+  - *Validation:* Verify generated JSON schemas match Gemini function calling format AND do not include `user_id` parameter
+
+### Phase 5.5: Production Safety — Currency, Isolation & Idempotency
+- [ ] **TASK-16a:** Implement `rupees_to_paise()` and `paise_to_rupees()` conversion utilities
+  - *Files:* `app/tools/converters.py`
+  - *Validation:* `pytest tests/tools/test_converters.py` — ₹5,000 → 500000 paise, edge cases (0, negative, very large amounts)
+- [ ] **TASK-16b:** Wire currency conversion into all monetary tool adapters (getTransaction, getAccountBalance, initiateRefund, getRefundStatus)
+  - *Details:* Adapters receive rupees from LLM, convert to paise for DB/API, convert back to rupees for ToolResult
+  - *Validation:* Integration tests with seed data verify correct amounts returned in rupees
+- [ ] **TASK-16c:** Add Pydantic validators for monetary fields — reject negative amounts and amounts > ₹10,00,000
+  - *Files:* `app/tools/schemas.py`
+  - *Validation:* `pytest tests/tools/test_schemas.py` — validator tests
+- [ ] **TASK-16d:** Implement idempotency key cache layer in Redis for write tools
+  - *Files:* `app/agent/tool_router.py`, `app/core/idempotency.py`
+  - *Details:* Redis key: `idempotency:{sha256_key}`, TTL: refund=24h, ticket=1h, notification=5m
+  - *Validation:* `pytest tests/agent/test_idempotency.py` — duplicate calls return cached result
 
 ### Phase 6: Live Adapter Stubs (Interface Only)
 - [ ] **TASK-17:** Create live adapter stub files with `NotImplementedError` for each tool

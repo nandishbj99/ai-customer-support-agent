@@ -47,3 +47,95 @@ The RAG Knowledge Base comprises an ingestion pipeline for document processing a
 **Decision:** Recommend **Hybrid search for v1**, add cross-encoder re-ranking in v2.
 **Pros:** Addresses both semantic intent and specific terminology critical in fintech (e.g., specific regulatory codes or internal error strings).
 **Cons:** Requires maintaining a separate BM25 index alongside ChromaDB.
+
+---
+
+### ADR-05: Embedding Provider Abstraction Pattern
+
+- **Status:** `PROPOSED`
+- **Date:** 2026-09-22
+
+#### Context & Problem Statement
+The RAG pipeline must not be locked into a single embedding provider. Different deployment scenarios require different embedding models:
+- **Cloud (default):** Google `text-embedding-004` — best integration with Gemini ecosystem
+- **Cost-sensitive:** OpenAI `text-embedding-3-small` — cheaper per token
+- **Privacy/on-premise:** Local `sentence-transformers` — no API calls, data stays local
+- **Migration:** Switching providers requires re-indexing all documents, so the abstraction must also track which model was used for existing embeddings
+
+#### Options Considered
+1. **Option A: Hardcoded Google embedding calls** — Google SDK calls in ingestion/retrieval code.
+   - *Pros:* Simplest.
+   - *Cons:* Provider lock-in. No seam for local model testing.
+2. **Option B: Abstract `EmbeddingProviderBase` interface** — ABC with `embed_text()`, `embed_batch()`, `get_dimension()`. Factory selects via `EMBED_PROVIDER` env var.
+   - *Pros:* Provider-agnostic. Consistent with FEAT-001 (LLM) and FEAT-002 (Tools) adapter patterns.
+   - *Cons:* ~60 lines of abstraction. Must handle dimension mismatches on provider switch.
+3. **Option C: LangChain Embeddings abstraction** — Use LangChain's `Embeddings` base class.
+   - *Pros:* Pre-built adapters.
+   - *Cons:* Heavy dependency, overkill for 2-3 providers.
+
+#### Decision Outcome & Justification
+**Chosen Option:** `Option B — Abstract EmbeddingProviderBase`
+**Rationale:** Consistent adapter pattern across the entire project (tools, LLM, embeddings). Lightweight, fully controlled, and handles the critical dimension-mismatch scenario.
+
+#### Implementation Details
+
+```python
+# rag/embeddings/base.py
+from abc import ABC, abstractmethod
+
+class EmbeddingProviderBase(ABC):
+    @abstractmethod
+    async def embed_text(self, text: str) -> list[float]: ...
+    
+    @abstractmethod
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]: ...
+    
+    @abstractmethod
+    def get_dimension(self) -> int: ...
+    
+    @abstractmethod
+    def get_model_name(self) -> str: ...
+
+# rag/embeddings/google.py — Default
+class GoogleEmbeddingProvider(EmbeddingProviderBase):
+    def __init__(self, model: str = "text-embedding-004", api_key: str = None):
+        self.client = genai.Client(api_key=api_key)
+        self.model = model
+    
+    async def embed_text(self, text: str) -> list[float]:
+        result = await self.client.aio.models.embed_content(
+            model=self.model, contents=text
+        )
+        return result.embeddings[0].values
+    
+    def get_dimension(self) -> int:
+        return 768  # text-embedding-004 dimension
+
+# rag/embeddings/factory.py
+class EmbeddingProviderFactory:
+    @staticmethod
+    def create(provider: str = "google", **kwargs) -> EmbeddingProviderBase:
+        providers = {
+            "google": GoogleEmbeddingProvider,
+            "openai": OpenAIEmbeddingProvider,
+            "local": LocalEmbeddingProvider,
+        }
+        return providers[provider](**kwargs)
+```
+
+#### Dimension Mismatch Safety
+
+| Provider | Model | Dimension | Notes |
+| :--- | :--- | :--- | :--- |
+| Google | text-embedding-004 | 768 | Default |
+| OpenAI | text-embedding-3-small | 1536 | Higher dimension |
+| Local | all-MiniLM-L6-v2 | 384 | Smallest, fastest |
+
+> Switching providers after initial indexing requires **full re-indexing** because dimensions differ. The system stores `embedding_model` and `embedding_dimension` in the document metadata table and raises an error at startup if there's a mismatch.
+
+#### Consequences & Impact
+- **Positive:** Provider-agnostic RAG pipeline. Can use local models for privacy or testing.
+- **Positive:** Batch embedding support for efficient ingestion.
+- **Negative:** Must handle re-indexing on provider switch.
+- **Mitigation:** Clear error messages and admin API endpoint to trigger re-indexing.
+

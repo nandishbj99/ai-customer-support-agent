@@ -27,3 +27,40 @@ The KB will manage the following distinct document categories, allowing for scop
 *   Regulatory Compliance (RBI guidelines)
 *   Troubleshooting Guides
 *   FAQs
+
+---
+
+## 5. Embedding Provider Abstraction Requirements
+
+### FR-09: Abstract Embedding Interface
+- **Description:** Define an abstract base class `EmbeddingProviderBase` with `embed_text()`, `embed_batch()`, and `get_dimension()` methods.
+- **Implementation:** Python `abc.ABC` with `@abstractmethod` decorators.
+- **Rationale:** The ingestion pipeline and retrieval engine must be completely decoupled from any specific embedding provider.
+
+### FR-10: Default Provider — Google text-embedding-004
+- **Description:** Implement `GoogleEmbeddingProvider` as the default adapter using the `google-genai` SDK.
+- **Model:** `text-embedding-004` (768 dimensions).
+- **Activation:** `EMBED_PROVIDER=google` (default).
+
+### FR-11: Provider Stubs (Future-Ready)
+- **Description:** Create stub adapters for OpenAI (`text-embedding-3-small`) and local sentence-transformers with `NotImplementedError`.
+- **Files:** `rag/embeddings/openai.py`, `rag/embeddings/local.py`
+- **Purpose:** Ready-made extension points for alternative embedding models.
+
+### FR-12: Embedding Provider Factory
+- **Description:** A factory class that reads `EMBED_PROVIDER` env var and instantiates the correct embedding provider.
+- **Supported values:** `google` (default), `openai`, `local`.
+- **Dependency Injection:** Factory provides the embedding provider to the ingestion pipeline and retrieval engine.
+
+### FR-13: Dimension Tracking
+- **Description:** `get_dimension()` must return the embedding vector dimension (e.g., 768 for Google, 1536 for OpenAI). ChromaDB collection must be configured with the correct dimension at creation time.
+- **Validation:** Dimension mismatch between provider and existing ChromaDB collection must raise a clear error at startup.
+
+### FR-14: Batch Embedding Support
+- **Description:** `embed_batch()` must support batching multiple text chunks in a single API call for efficient ingestion.
+- **Rate Limiting:** Respect provider-specific rate limits (e.g., Google: 1500 requests/min, OpenAI: 3000 RPM).
+
+### FR-15: Embedding Consistency Warning
+- **Description:** If `EMBED_PROVIDER` is changed after initial ingestion, the system must detect the dimension/model mismatch and warn the user that re-indexing is required.
+- **Implementation:** Store the embedding model name and dimension in the document metadata table.
+

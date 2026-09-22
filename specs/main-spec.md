@@ -86,9 +86,9 @@ flowchart TB
 | Subsystem | Technology Stack | Primary Responsibility |
 | :--- | :--- | :--- |
 | **Conversation API** | Python 3.12+, FastAPI, WebSocket | Customer-facing REST + WebSocket interface, session management |
-| **Agent Orchestrator** | Google Gemini API (google-genai SDK), ReAct loop | LLM reasoning, tool selection, multi-step planning, state management |
+| **Agent Orchestrator** | Adapter Pattern, google-genai SDK (default), ReAct loop | LLM reasoning via `LLMProviderBase` interface — Gemini default, swappable to OpenAI/Anthropic/local |
 | **Tool Layer** | Adapter Pattern, Pydantic, SQLAlchemy (mock) / httpx (live) | Deterministic API tools with swappable mock/live backends |
-| **RAG Engine** | ChromaDB, Google text-embedding, LangChain | Policy document ingestion, semantic search, context retrieval |
+| **RAG Engine** | Adapter Pattern, ChromaDB, google-genai (default) | Embedding via `EmbeddingProviderBase` interface — Google default, swappable to OpenAI/local |
 | **HITL Approval** | Celery, Redis (broker), FastAPI (dashboard) | Approval queue, threshold routing, timeout escalation |
 | **Security & Audit** | JWT/OAuth2, structlog, PostgreSQL | Authentication, authorization, PII masking, audit trail |
 | **Data & Storage** | PostgreSQL (SQLAlchemy + Alembic), Redis | Relational data, cache, sessions, message broker |
@@ -118,6 +118,7 @@ flowchart TB
 10. **Stateless Authentication:** JWT-based auth for customers; OAuth2 for human agents.
 11. **Graceful Degradation:** If the LLM is unavailable, the system falls back to rule-based responses and escalates to human agents.
 12. **Resilience (Live Mode):** Circuit breakers, exponential retry, response caching, and outbound rate limiting for external API integrations.
+13. **Provider-Agnostic AI:** LLM providers (Gemini, OpenAI, Anthropic, local) and embedding models (Google, OpenAI, sentence-transformers) are swappable via `LLM_PROVIDER` and `EMBED_PROVIDER` environment variables. The agent orchestrator and RAG pipeline are completely provider-agnostic — only adapter implementations change.
 
 ---
 

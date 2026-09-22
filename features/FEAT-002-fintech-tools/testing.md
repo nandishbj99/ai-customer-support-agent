@@ -76,12 +76,37 @@ Testing covers three layers:
 | `TC-29` | No retry on 4xx client error | `tools.live.infra` | Immediate failure, no retry | `PENDING` |
 | `TC-30` | Response cache returns cached data within TTL | `tools.live.infra` | Second call uses Redis cache | `PENDING` |
 
+### 2.8 Currency Conversion Tests (Paise ↔ Rupees)
+| Test ID | Test Scenario | Target Module | Expected Result | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `TC-31` | `rupees_to_paise(5000)` converts correctly | `tools.converters` | Returns `500000` | `PENDING` |
+| `TC-32` | `paise_to_rupees(500000)` converts correctly | `tools.converters` | Returns `5000.00` | `PENDING` |
+| `TC-33` | `rupees_to_paise(0.01)` handles 1 paisa | `tools.converters` | Returns `1` | `PENDING` |
+| `TC-34` | Negative amount rejected by Pydantic validator | `tools.schemas` | `ValidationError` raised | `PENDING` |
+| `TC-35` | Amount > ₹10,00,000 rejected by Pydantic validator | `tools.schemas` | `ValidationError` raised | `PENDING` |
+| `TC-36` | `getTransaction` returns amount in rupees (not paise) | `tools.mock.transaction` | `data.amount == 5000.00` (not 500000) | `PENDING` |
+| `TC-37` | `initiateRefund` with ₹5,000 stores 500000 paise in DB | `tools.mock.refund` | DB row has `amount_paise=500000` | `PENDING` |
+
+### 2.9 Tenant Isolation Tests (Session-Injected `user_id`)
+| Test ID | Test Scenario | Target Module | Expected Result | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `TC-38` | ToolRouter strips `user_id` from LLM args | `agent.tool_router` | `user_id` removed from args before dispatch | `PENDING` |
+| `TC-39` | ToolRouter injects `user_id` from session context | `agent.tool_router` | Service receives `session.user_id`, not LLM arg | `PENDING` |
+| `TC-40` | Tool schema does NOT include `user_id` parameter | `tools.registry` | Generated JSON schema has no `user_id` field | `PENDING` |
+
+### 2.10 Idempotency Tests (Write Deduplication)
+| Test ID | Test Scenario | Target Module | Expected Result | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `TC-41` | Duplicate `initiateRefund` call returns cached result | `agent.tool_router` | Second call returns same `ToolResult`, no new DB row | `PENDING` |
+| `TC-42` | Same refund in different session creates new refund | `agent.tool_router` | Different `session_id` = different idempotency key | `PENDING` |
+
 ---
 
 ## 3. Test Data Strategy
 
 - Maintain a static set of realistic SQL fixtures in `tests/fixtures/seed_scenarios.sql`
 - Use deterministic IDs in tests (e.g., `user_001`, `txn_001`) for straightforward assertions
+- **All monetary values in fixtures are in paise** — tests verify that adapters correctly convert to rupees for ToolResult
 - Fixtures cover these scenarios:
 
 | Scenario ID | User | Transaction | Account | Fraud | Purpose |
@@ -99,6 +124,10 @@ Testing covers three layers:
 - [ ] All 7 live adapter stubs created (raise `NotImplementedError`)
 - [ ] Factory correctly selects adapters based on `TOOL_MODE`
 - [ ] ToolRouter dispatches all 13 tools correctly
+- [ ] ToolRouter injects `user_id` from session, strips LLM-provided `user_id` (TC-38, TC-39)
+- [ ] `user_id` absent from all Gemini tool schemas (TC-40)
+- [ ] Currency conversion correct at adapter boundary (TC-31 to TC-37)
+- [ ] Idempotency prevents duplicate write operations (TC-41, TC-42)
 - [ ] Gemini function calling schemas generated for all tools
 - [ ] Cross-user data isolation enforced (TC-23)
 - [ ] Circuit breaker and retry logic unit tested (TC-26-29)

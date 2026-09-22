@@ -192,3 +192,30 @@ Example Response:
   - `getCustomerProfile`: 60 second TTL
   - Write tools: never cached
 
+---
+
+## 6. Production Safety Requirements
+
+### FR-21: Currency Conversion — Paise ↔ Rupees
+- **Description:** All monetary values are stored internally in **paise** (`BIGINT`) but the LLM and customer interact in **rupees** (₹).
+- **Implementation:** Conversion functions `rupees_to_paise()` and `paise_to_rupees()` in `tools/converters.py`.
+- **Boundary:** Conversion happens at the adapter boundary. Service layer works in paise; tool input/output and Gemini tool descriptions use rupees.
+- **Validation:** Pydantic validators must reject negative amounts and amounts exceeding ₹10,00,000 (₹10 lakh).
+- **Gemini Tool Descriptions:** Must explicitly state `"amount in INR (₹)"` to prevent the LLM from passing paise values.
+
+### FR-22: Tenant Isolation — Session-Injected `user_id`
+- **Description:** The `user_id` is **never** a parameter in the Gemini tool schema. The `ToolRouter` injects it from the authenticated JWT session context.
+- **Security:** If `user_id` somehow appears in LLM-generated args, it is stripped and overridden with the authenticated user.
+- **Defense in Depth:** All database queries include `WHERE user_id = :authenticated_user_id` regardless.
+- **Rationale:** An LLM hallucination or prompt injection must not be able to access another customer's data.
+
+### FR-23: Idempotency Keys for Write Operations
+- **Description:** Write tools (`initiateRefund`, `createSupportTicket`, `sendNotification`, `escalateToHumanAgent`) must use auto-generated idempotency keys to prevent duplicate execution during ReAct retries or network failures.
+- **Key Generation:** `sha256(session_id + tool_name + sorted(args))` — deterministic for identical calls within the same session.
+- **Storage:** Redis with TTL per operation type (refunds: 24h, tickets: 1h, notifications: 5m).
+- **Behavior:** Duplicate calls return the cached `ToolResult` without re-executing.
+
+### FR-24: Circuit Breaker Scaling (Live Mode)
+- **Description:** Default `pybreaker` uses process-local state (acceptable for MVP with single-process deployment).
+- **Scaling Note:** For multi-worker/multi-pod deployments, switch to `pybreaker` with `RedisStorage` for shared circuit state across all instances.
+- **Scope:** Noted as a v2 scaling concern — no implementation change needed for v1.

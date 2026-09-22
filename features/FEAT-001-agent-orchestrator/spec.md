@@ -52,3 +52,44 @@ This feature implements the central brain of the AI-powered fintech customer sup
   "tool_calls_made": ["get_last_transaction", "get_account_balance"]
 }
 ```
+
+---
+
+## 6. LLM Provider Abstraction Requirements
+
+### FR-11: Abstract LLM Interface
+- **Description:** Define an abstract base class `LLMProviderBase` with `generate()` and `generate_stream()` methods.
+- **Implementation:** Python `abc.ABC` with `@abstractmethod` decorators.
+- **Rationale:** The ReAct loop, tool dispatch, and state management must be completely provider-agnostic.
+
+### FR-12: Default Provider — Google Gemini
+- **Description:** Implement `GeminiProvider` as the default LLM adapter using the `google-genai` SDK.
+- **Models Supported:** `gemini-2.5-flash` (default), `gemini-2.5-pro`, `gemini-2.0-flash`.
+- **Activation:** `LLM_PROVIDER=gemini` (default).
+
+### FR-13: Provider Stubs (Future-Ready)
+- **Description:** Create stub adapters for OpenAI, Anthropic, and Ollama (local) with `NotImplementedError`.
+- **Files:** `agent/llm/openai.py`, `agent/llm/anthropic.py`, `agent/llm/ollama.py`
+- **Purpose:** Ready-made extension points for future provider integration.
+
+### FR-14: LLM Provider Factory
+- **Description:** A factory class that reads `LLM_PROVIDER` env var and instantiates the correct provider.
+- **Supported values:** `gemini` (default), `openai`, `anthropic`, `local`.
+- **Dependency Injection:** Factory provides the LLM provider to the orchestrator via FastAPI dependency injection.
+
+### FR-15: Normalized LLM Response
+- **Description:** All provider adapters must return a unified `LLMResponse` dataclass containing: `text`, `tool_calls` (list of `ToolCall`), `finish_reason`, and `usage` (token counts).
+- **Rationale:** The orchestrator must not contain any provider-specific parsing logic.
+
+### FR-16: Function Calling Format Normalization
+- **Description:** Each provider adapter must translate canonical Pydantic tool schemas to the provider's native function calling format (Gemini `FunctionDeclaration`, OpenAI `tools`, Anthropic `input_schema`).
+- **Direction:** Pydantic → Provider-specific (outbound). Provider-response → `ToolCall` dataclass (inbound).
+
+### FR-17: Streaming Support
+- **Description:** `generate_stream()` must return an `AsyncIterator[LLMChunk]` for real-time response streaming via WebSocket (FEAT-006).
+- **Chunking:** Stream semantic chunks (sentences/paragraphs), not raw tokens.
+
+### FR-18: Multi-Model Routing (Future)
+- **Description:** Support routing different query complexities to different models (e.g., Gemini Flash for simple balance checks, Gemini Pro for complex fraud investigations).
+- **Scope:** Design the interface now; implement routing logic in a future iteration.
+
