@@ -31,9 +31,9 @@ Testing covers three layers:
 | :--- | :--- | :--- | :--- | :--- |
 | `TC-05` | `getTransaction` with valid txn_id | `tools.mock.transaction` | Returns `ToolResult(success=True)` with transaction data | `PASSED` |
 | `TC-06` | `getTransaction` with non-existent txn_id | `tools.mock.transaction` | Returns `ToolResult(success=False, error={code: "TXN_NOT_FOUND"})` | `PASSED` |
-| `TC-07` | `checkFraudStatus` for flagged transaction | `tools.mock.fraud` | Returns `{is_flagged: true, risk_score: >0.7}` | `PENDING` |
-| `TC-08` | `initiateRefund` with amount > ₹10,000 | `tools.mock.refund` | Returns `{status: "pending_approval"}`, routes to HITL | `PENDING` |
-| `TC-09` | `initiateRefund` with amount ≤ ₹10,000 | `tools.mock.refund` | Returns `{status: "processing"}`, auto-approved | `PENDING` |
+| `TC-07` | `checkFraudStatus` for flagged transaction | `tools.mock.fraud` | Returns `{is_flagged: true, risk_score: >0.7}` | `PASSED` |
+| `TC-08` | `initiateRefund` with amount > ₹10,000 | `tools.mock.refund` | Returns `{status: "pending_approval"}`, routes to HITL | `PASSED` |
+| `TC-09` | `initiateRefund` with amount ≤ ₹10,000 | `tools.mock.refund` | Returns `{status: "processing"}`, auto-approved | `PASSED` |
 | `TC-10` | `getAccount` for frozen account | `tools.mock.account` | Returns `{status: "frozen"}` | `PASSED` |
 
 ### 2.3 Adapter Contract Tests
@@ -57,7 +57,7 @@ Testing covers three layers:
 | :--- | :--- | :--- | :--- | :--- |
 | `TC-19` | `getTransaction` retrieves accurate joined data | Full mock pipeline | Amount, status, merchant all correct | `PENDING` |
 | `TC-20` | `getTransactionHistory` with pagination | Full mock pipeline | Returns correct page size, `has_more` flag | `PASSED` |
-| `TC-21` | `checkFraudStatus` returns correct score from fixtures | Full mock pipeline | Score matches seeded data | `PENDING` |
+| `TC-21` | `checkFraudStatus` returns correct score from fixtures | Full mock pipeline | Score matches seeded data | `PASSED` |
 | `TC-22` | End-to-end: Router → Factory → Mock → DB → ToolResult | Full pipeline | Complete round-trip successful | `PENDING` |
 
 ### 2.6 Security & Access Control Tests

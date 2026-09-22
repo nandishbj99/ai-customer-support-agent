@@ -2,7 +2,7 @@
 
 > **Feature ID:** `FEAT-002-fintech-tools`  
 > **Status:** `IN_PROGRESS`  
-> **Current Focus / Next Action:** `Phase 3: Mock Adapters — Investigation Tools (TASK-09 to TASK-10)`  
+> **Current Focus / Next Action:** `Phase 4: Mock Write Tools (TASK-11 to TASK-13)`  
 > **Owner:** `Team`  
 > **Last Updated:** 2026-09-22
 
@@ -12,10 +12,10 @@
 
 | Metric | Value |
 | :--- | :--- |
-| **Current Phase** | `Phase 3: Investigation Tools` |
-| **Tasks Completed** | 8 / 22 (36%) |
+| **Current Phase** | `Phase 4: Write Tools` |
+| **Tasks Completed** | 10 / 22 (45%) |
 | **Blockers** | None |
-| **Ready for Next Phase?** | Yes (Phase 2 Complete) |
+| **Ready for Next Phase?** | Yes (Phase 3 Complete) |
 
 ---
 
@@ -24,7 +24,8 @@
 - [x] Action 2: Get user alignment on mock vs live adapter strategy.
 - [x] Action 3: Complete Phase 1 task execution (TASK-01 to TASK-05).
 - [x] Action 4: Implement Phase 2 Mock Adapters (TASK-06 to TASK-08).
-- [ ] Action 5: Implement Phase 3 Investigation Tools (TASK-09 to TASK-10).
+- [x] Action 5: Implement Phase 3 Investigation Tools (TASK-09 to TASK-10).
+- [ ] Action 6: Implement Phase 4 Mock Write Tools (TASK-11 to TASK-13).
 
 ---
 
@@ -59,12 +60,12 @@
   - *Validation:* `pytest tests/tools/mock/test_payment.py`
 
 ### Phase 3: Mock Adapters — Investigation Tools
-- [ ] **TASK-09:** Implement `MockFraudService` (checkFraudStatus)
+- [x] **TASK-09:** Implement `MockFraudService` (checkFraudStatus)
   - *Files:* `app/tools/mock/fraud.py`
-  - *Validation:* `pytest tests/tools/mock/test_fraud.py`
-- [ ] **TASK-10:** Implement `MockRefundService` (getRefundStatus, initiateRefund)
+  - *Validation:* `pytest tests/tools/mock/test_fraud.py` (TC-07)
+- [x] **TASK-10:** Implement `MockRefundService` (getRefundStatus, initiateRefund)
   - *Files:* `app/tools/mock/refund.py`
-  - *Validation:* `pytest tests/tools/mock/test_refund.py` — verify HITL routing for amounts > ₹10,000
+  - *Validation:* `pytest tests/tools/mock/test_refund.py` (TC-08, TC-09)
 
 ### Phase 4: Mock Adapters — Write Tools
 - [ ] **TASK-11:** Implement `MockTicketService` (createSupportTicket)
