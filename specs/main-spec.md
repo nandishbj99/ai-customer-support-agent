@@ -129,7 +129,7 @@ All active, upcoming, and completed features are tracked in [`features/`](../fea
 | Feature ID | Feature Name | Owner / Lead | Status | Target Date | Spec Link |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `FEAT-001-agent-orchestrator` | Core Agent Orchestrator | Team | `PROPOSED` | TBD | [FEAT-001](../features/FEAT-001-agent-orchestrator/spec.md) |
-| `FEAT-002-fintech-tools` | Fintech Tool Layer | Team | `PROPOSED` | TBD | [FEAT-002](../features/FEAT-002-fintech-tools/spec.md) |
+| `FEAT-002-fintech-tools` | Fintech Tool Layer | Team | `IN_PROGRESS` | TBD | [FEAT-002](../features/FEAT-002-fintech-tools/spec.md) |
 | `FEAT-003-rag-knowledge-base` | RAG Knowledge Base | Team | `PROPOSED` | TBD | [FEAT-003](../features/FEAT-003-rag-knowledge-base/spec.md) |
 | `FEAT-004-hitl-approval` | Human-in-the-Loop Approval | Team | `PROPOSED` | TBD | [FEAT-004](../features/FEAT-004-hitl-approval/spec.md) |
 | `FEAT-005-security-audit` | Security & Audit Logging | Team | `PROPOSED` | TBD | [FEAT-005](../features/FEAT-005-security-audit/spec.md) |

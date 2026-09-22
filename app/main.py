@@ -1,0 +1,31 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+import structlog
+
+from app.core.config import settings
+
+logger = structlog.get_logger()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("application_startup", environment=settings.ENVIRONMENT, tool_mode=settings.TOOL_MODE)
+    yield
+    logger.info("application_shutdown")
+
+
+app = FastAPI(
+    title="Fintech AI Customer Support Agent",
+    description="Autonomous Agentic Customer Support with Deterministic Fintech Tools, RAG, and HITL",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {
+        "status": "healthy",
+        "environment": settings.ENVIRONMENT,
+        "tool_mode": settings.TOOL_MODE,
+    }

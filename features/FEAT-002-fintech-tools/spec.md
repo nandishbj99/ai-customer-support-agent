@@ -1,7 +1,7 @@
 # FEAT-002-fintech-tools: Fintech Tool Layer Specification
 
 > **Feature ID:** `FEAT-002-fintech-tools`  
-> **Status:** `PROPOSED`  
+> **Status:** `IN_PROGRESS`  
 > **Created Date:** 2026-09-18  
 > **Last Updated:** 2026-09-19  
 > **Parent Spec:** [Master Project Spec](../../specs/main-spec.md)

@@ -1,7 +1,7 @@
 # FEAT-002-fintech-tools: Design & ADRs
 
 > **Feature ID:** `FEAT-002-fintech-tools`  
-> **Status:** `PROPOSED`  
+> **Status:** `IN_PROGRESS`  
 > **Created Date:** 2026-09-18  
 > **Last Updated:** 2026-09-19  
 > **Specification:** [Feature Spec](./spec.md) | [Tasks](./tasks.md) | [Testing](./testing.md)
@@ -125,7 +125,7 @@ flowchart LR
 
 ### ADR-01: Tool Interface Pattern — Direct DB Queries vs Service Layer vs Microservice Calls
 
-- **Status:** `PROPOSED`
+- **Status:** `APPROVED`
 - **Date:** 2026-09-18
 
 #### Context & Problem Statement
@@ -155,7 +155,7 @@ The LLM agent needs to interact with fintech data (transactions, accounts) and t
 
 ### ADR-02: Mock vs Real Data Strategy
 
-- **Status:** `PROPOSED`
+- **Status:** `APPROVED`
 - **Date:** 2026-09-18
 
 #### Context & Problem Statement
@@ -180,7 +180,7 @@ To test the agent's ability to reason over transactions and accounts, we need a 
 
 ### ADR-03: Tool Schema Definition — JSON Schema vs Pydantic vs Protobuf
 
-- **Status:** `PROPOSED`
+- **Status:** `APPROVED`
 - **Date:** 2026-09-18
 
 #### Context & Problem Statement
@@ -205,7 +205,7 @@ Gemini function calling requires strict JSON Schema definitions for tools. We ne
 
 ### ADR-04: Error Handling — Tool-Level Error Codes & Retry Strategy
 
-- **Status:** `PROPOSED`
+- **Status:** `APPROVED`
 - **Date:** 2026-09-18
 
 #### Context & Problem Statement
@@ -224,7 +224,7 @@ Tools may fail due to DB timeouts, invalid input, external API errors, or busine
 
 ### ADR-05: Backend Adapter Strategy — Mock-First with Live Swap
 
-- **Status:** `PROPOSED`
+- **Status:** `APPROVED`
 - **Date:** 2026-09-19
 
 #### Context & Problem Statement

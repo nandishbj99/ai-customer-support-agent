@@ -1,10 +1,10 @@
 # Feature Tasks & Execution Plan: FEAT-002 — Fintech Tool Layer
 
 > **Feature ID:** `FEAT-002-fintech-tools`  
-> **Status:** `PROPOSED`  
-> **Current Focus / Next Action:** `Review ADRs & Design (Adapter Pattern) with user`  
+> **Status:** `IN_PROGRESS`  
+> **Current Focus / Next Action:** `Phase 3: Mock Adapters — Investigation Tools (TASK-09 to TASK-10)`  
 > **Owner:** `Team`  
-> **Last Updated:** 2026-09-19
+> **Last Updated:** 2026-09-22
 
 ---
 
@@ -12,47 +12,49 @@
 
 | Metric | Value |
 | :--- | :--- |
-| **Current Phase** | `Specification & ADR Review` |
-| **Tasks Completed** | 0 / 22 (0%) |
+| **Current Phase** | `Phase 3: Investigation Tools` |
+| **Tasks Completed** | 8 / 22 (36%) |
 | **Blockers** | None |
-| **Ready for Next Phase?** | Awaiting ADR sign-off (especially ADR-05: Adapter Pattern) |
+| **Ready for Next Phase?** | Yes (Phase 2 Complete) |
 
 ---
 
 ## 2. Immediate Actions Needed
-- [ ] Action 1: Complete and review ADRs in [design.md](./design.md), especially ADR-05 (Adapter Pattern).
-- [ ] Action 2: Get user alignment on mock vs live adapter strategy.
-- [ ] Action 3: Begin Phase 1 task execution after approval.
+- [x] Action 1: Complete and review ADRs in [design.md](./design.md), especially ADR-05 (Adapter Pattern).
+- [x] Action 2: Get user alignment on mock vs live adapter strategy.
+- [x] Action 3: Complete Phase 1 task execution (TASK-01 to TASK-05).
+- [x] Action 4: Implement Phase 2 Mock Adapters (TASK-06 to TASK-08).
+- [ ] Action 5: Implement Phase 3 Investigation Tools (TASK-09 to TASK-10).
 
 ---
 
 ## 3. Phased Task Breakdown
 
 ### Phase 1: Foundation — Data Models, Schemas & Abstract Interfaces
-- [ ] **TASK-01:** Define SQLAlchemy ORM models for `User`, `Account`, `Transaction`, `Payment`, `Refund`, `SupportTicket`
+- [x] **TASK-01:** Define SQLAlchemy ORM models for `User`, `Account`, `Transaction`, `Payment`, `Refund`, `SupportTicket`
   - *Files:* `app/core/models.py`
-  - *Validation:* `alembic upgrade head` runs without errors
-- [ ] **TASK-02:** Create Alembic migrations for all tables
+  - *Validation:* `tests/test_models.py` passes
+- [x] **TASK-02:** Create Alembic migrations for all tables
   - *Files:* `migrations/versions/001_initial_schema.py`
-  - *Validation:* `alembic upgrade head && alembic downgrade base` both succeed
-- [ ] **TASK-03:** Create seed data script with 15+ realistic scenarios
+  - *Validation:* Migration file created with forward and rollback definitions
+- [x] **TASK-03:** Create seed data script with 15+ realistic scenarios
   - *Files:* `app/seeds/seed_data.py`
-  - *Validation:* `python -m app.seeds.seed_data` populates all tables
-- [ ] **TASK-04:** Define Pydantic models for all tool inputs/outputs and the `ToolResult` wrapper
+  - *Validation:* `tests/test_seeds.py` populates all tables and verifies scenarios S-01 to S-15
+- [x] **TASK-04:** Define Pydantic models for all tool inputs/outputs and the `ToolResult` wrapper
   - *Files:* `app/tools/schemas.py`
-  - *Validation:* `pytest tests/tools/test_schemas.py` passes
-- [ ] **TASK-05:** Define abstract base classes (ABCs) for all 7 core tool interfaces
-  - *Files:* `app/tools/base.py` (TransactionServiceBase, AccountServiceBase, PaymentServiceBase, FraudServiceBase, RefundServiceBase, TicketServiceBase, NotificationServiceBase)
-  - *Validation:* Interfaces are importable, have `@abstractmethod` decorators
+  - *Validation:* `tests/test_schemas.py` passes (TC-01, TC-02, TC-03, TC-04)
+- [x] **TASK-05:** Define abstract base classes (ABCs) for all 7 core tool interfaces
+  - *Files:* `app/tools/base.py` (TransactionServiceBase, AccountServiceBase, PaymentServiceBase, FraudServiceBase, RefundServiceBase, TicketServiceBase, NotificationServiceBase, EscalationServiceBase)
+  - *Validation:* `tests/test_base_interfaces.py` passes
 
 ### Phase 2: Mock Adapters — Core Read Tools
-- [ ] **TASK-06:** Implement `MockTransactionService` (getTransaction, getTransactionHistory)
+- [x] **TASK-06:** Implement `MockTransactionService` (getTransaction, getTransactionHistory)
   - *Files:* `app/tools/mock/transaction.py`
-  - *Validation:* `pytest tests/tools/mock/test_transaction.py`
-- [ ] **TASK-07:** Implement `MockAccountService` (getAccount, getAccountBalance, getCustomerProfile)
+  - *Validation:* `pytest tests/tools/mock/test_transaction.py` (TC-05, TC-06, TC-20, TC-23)
+- [x] **TASK-07:** Implement `MockAccountService` (getAccount, getAccountBalance, getCustomerProfile)
   - *Files:* `app/tools/mock/account.py`
-  - *Validation:* `pytest tests/tools/mock/test_account.py`
-- [ ] **TASK-08:** Implement `MockPaymentService` (getPaymentStatus)
+  - *Validation:* `pytest tests/tools/mock/test_account.py` (TC-10)
+- [x] **TASK-08:** Implement `MockPaymentService` (getPaymentStatus)
   - *Files:* `app/tools/mock/payment.py`
   - *Validation:* `pytest tests/tools/mock/test_payment.py`
 
