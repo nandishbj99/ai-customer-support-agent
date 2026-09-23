@@ -95,6 +95,8 @@ class InitiateRefundInput(BaseModel):
     def validate_amount(cls, v: float) -> float:
         if v <= 0:
             raise ValueError("Refund amount must be strictly greater than 0")
+        if v > 1_000_000.0:
+            raise ValueError("Refund amount exceeds maximum permissible limit of ₹1,000,000")
         return round(v, 2)
 
 

@@ -39,66 +39,66 @@ Testing covers three layers:
 ### 2.3 Adapter Contract Tests
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-11` | All mock adapters inherit from correct ABC | `tools.mock.*` | `isinstance(service, ServiceBase)` is True | `PENDING` |
-| `TC-12` | All live adapter stubs inherit from correct ABC | `tools.live.*` | `isinstance(service, ServiceBase)` is True | `PENDING` |
-| `TC-13` | Mock and live adapters return same `ToolResult` schema | `tools.*` | Both return `{success, data, error}` structure | `PENDING` |
+| `TC-11` | All mock adapters inherit from correct ABC | `tools.mock.*` | `isinstance(service, ServiceBase)` is True | `PASSED` |
+| `TC-12` | All live adapter stubs inherit from correct ABC | `tools.live.*` | `isinstance(service, ServiceBase)` is True | `PASSED` |
+| `TC-13` | Mock and live adapters return same `ToolResult` schema | `tools.*` | Both return `{success, data, error}` structure | `PASSED` |
 
 ### 2.4 Factory & Router Tests
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-14` | Factory creates mock adapters when `TOOL_MODE=mock` | `tools.factory` | All services are `Mock*Service` instances | `PENDING` |
-| `TC-15` | Factory creates live adapters when `TOOL_MODE=live` | `tools.factory` | All services are `*LiveService` instances | `PENDING` |
-| `TC-16` | Factory handles hybrid mode correctly | `tools.factory` | Mix of mock and live per tool config | `PENDING` |
-| `TC-17` | ToolRouter dispatches `getTransaction` to correct service | `agent.tool_router` | Correct service method invoked | `PENDING` |
-| `TC-18` | ToolRouter handles unknown tool name | `agent.tool_router` | Returns `ToolResult(success=False, error={code: "UNKNOWN_TOOL"})` | `PENDING` |
+| `TC-14` | Factory creates mock adapters when `TOOL_MODE=mock` | `tools.factory` | All services are `Mock*Service` instances | `PASSED` |
+| `TC-15` | Factory creates live adapters when `TOOL_MODE=live` | `tools.factory` | All services are `*LiveService` instances | `PASSED` |
+| `TC-16` | Factory handles hybrid mode correctly | `tools.factory` | Mix of mock and live per tool config | `PASSED` |
+| `TC-17` | ToolRouter dispatches `getTransaction` to correct service | `agent.tool_router` | Correct service method invoked | `PASSED` |
+| `TC-18` | ToolRouter handles unknown tool name | `agent.tool_router` | Returns `ToolResult(success=False, error={code: "UNKNOWN_TOOL"})` | `PASSED` |
 
 ### 2.5 Integration Tests (PostgreSQL Fixtures)
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-19` | `getTransaction` retrieves accurate joined data | Full mock pipeline | Amount, status, merchant all correct | `PENDING` |
+| `TC-19` | `getTransaction` retrieves accurate joined data | Full mock pipeline | Amount, status, merchant all correct | `PASSED` |
 | `TC-20` | `getTransactionHistory` with pagination | Full mock pipeline | Returns correct page size, `has_more` flag | `PASSED` |
 | `TC-21` | `checkFraudStatus` returns correct score from fixtures | Full mock pipeline | Score matches seeded data | `PASSED` |
-| `TC-22` | End-to-end: Router → Factory → Mock → DB → ToolResult | Full pipeline | Complete round-trip successful | `PENDING` |
+| `TC-22` | End-to-end: Router → Factory → Mock → DB → ToolResult | Full pipeline | Complete round-trip successful | `PASSED` |
 
 ### 2.6 Security & Access Control Tests
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | `TC-23` | User A tries to access User B's transaction | `tools.mock.transaction` | Returns `UNAUTHORIZED_ACCESS` error | `PASSED` |
-| `TC-24` | SQL injection in `txn_id` field | `tools.schemas` | Pydantic validation rejects | `PENDING` |
+| `TC-24` | SQL injection in `txn_id` field | `tools.schemas` | Pydantic validation rejects | `PASSED` |
 | `TC-25` | Rate limit exceeded for read operations | Rate limiter | Returns `RATE_LIMITED` error after 50 calls/min | `PENDING` |
 
 ### 2.7 Live Adapter Infrastructure Tests
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-26` | Circuit breaker opens after 5 failures | `tools.live.infra` | Subsequent calls return `SERVICE_UNAVAILABLE` | `PENDING` |
-| `TC-27` | Circuit breaker resets after 60s timeout | `tools.live.infra` | Calls resume normally | `PENDING` |
-| `TC-28` | Retry with exponential backoff on 5xx | `tools.live.infra` | Max 3 retries with increasing delay | `PENDING` |
-| `TC-29` | No retry on 4xx client error | `tools.live.infra` | Immediate failure, no retry | `PENDING` |
-| `TC-30` | Response cache returns cached data within TTL | `tools.live.infra` | Second call uses Redis cache | `PENDING` |
+| `TC-26` | Circuit breaker opens after 5 failures | `tools.live.infra` | Subsequent calls return `SERVICE_UNAVAILABLE` | `PASSED` |
+| `TC-27` | Circuit breaker resets after 60s timeout | `tools.live.infra` | Calls resume normally | `PASSED` |
+| `TC-28` | Retry with exponential backoff on 5xx | `tools.live.infra` | Max 3 retries with increasing delay | `PASSED` |
+| `TC-29` | No retry on 4xx client error | `tools.live.infra` | Immediate failure, no retry | `PASSED` |
+| `TC-30` | Response cache returns cached data within TTL | `tools.live.infra` | Second call uses Redis cache | `PASSED` |
 
 ### 2.8 Currency Conversion Tests (Paise ↔ Rupees)
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-31` | `rupees_to_paise(5000)` converts correctly | `tools.converters` | Returns `500000` | `PENDING` |
-| `TC-32` | `paise_to_rupees(500000)` converts correctly | `tools.converters` | Returns `5000.00` | `PENDING` |
-| `TC-33` | `rupees_to_paise(0.01)` handles 1 paisa | `tools.converters` | Returns `1` | `PENDING` |
-| `TC-34` | Negative amount rejected by Pydantic validator | `tools.schemas` | `ValidationError` raised | `PENDING` |
-| `TC-35` | Amount > ₹10,00,000 rejected by Pydantic validator | `tools.schemas` | `ValidationError` raised | `PENDING` |
-| `TC-36` | `getTransaction` returns amount in rupees (not paise) | `tools.mock.transaction` | `data.amount == 5000.00` (not 500000) | `PENDING` |
-| `TC-37` | `initiateRefund` with ₹5,000 stores 500000 paise in DB | `tools.mock.refund` | DB row has `amount_paise=500000` | `PENDING` |
+| `TC-31` | `rupees_to_paise(5000)` converts correctly | `tools.converters` | Returns `500000` | `PASSED` |
+| `TC-32` | `paise_to_rupees(500000)` converts correctly | `tools.converters` | Returns `5000.00` | `PASSED` |
+| `TC-33` | `rupees_to_paise(0.01)` handles 1 paisa | `tools.converters` | Returns `1` | `PASSED` |
+| `TC-34` | Negative amount rejected by Pydantic validator | `tools.schemas` | `ValidationError` raised | `PASSED` |
+| `TC-35` | Amount > ₹10,00,000 rejected by Pydantic validator | `tools.schemas` | `ValidationError` raised | `PASSED` |
+| `TC-36` | `getTransaction` returns amount in rupees (not paise) | `tools.mock.transaction` | `data.amount == 5000.00` (not 500000) | `PASSED` |
+| `TC-37` | `initiateRefund` with ₹5,000 stores 500000 paise in DB | `tools.mock.refund` | DB row has `amount_paise=500000` | `PASSED` |
 
 ### 2.9 Tenant Isolation Tests (Session-Injected `user_id`)
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-38` | ToolRouter strips `user_id` from LLM args | `agent.tool_router` | `user_id` removed from args before dispatch | `PENDING` |
-| `TC-39` | ToolRouter injects `user_id` from session context | `agent.tool_router` | Service receives `session.user_id`, not LLM arg | `PENDING` |
-| `TC-40` | Tool schema does NOT include `user_id` parameter | `tools.registry` | Generated JSON schema has no `user_id` field | `PENDING` |
+| `TC-38` | ToolRouter strips `user_id` from LLM args | `agent.tool_router` | `user_id` removed from args before dispatch | `PASSED` |
+| `TC-39` | ToolRouter injects `user_id` from session context | `agent.tool_router` | Service receives `session.user_id`, not LLM arg | `PASSED` |
+| `TC-40` | Tool schema does NOT include `user_id` parameter | `tools.registry` | Generated JSON schema has no `user_id` field | `PASSED` |
 
 ### 2.10 Idempotency Tests (Write Deduplication)
 | Test ID | Test Scenario | Target Module | Expected Result | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `TC-41` | Duplicate `initiateRefund` call returns cached result | `agent.tool_router` | Second call returns same `ToolResult`, no new DB row | `PENDING` |
-| `TC-42` | Same refund in different session creates new refund | `agent.tool_router` | Different `session_id` = different idempotency key | `PENDING` |
+| `TC-41` | Duplicate `initiateRefund` call returns cached result | `agent.tool_router` | Second call returns same `ToolResult`, no new DB row | `PASSED` |
+| `TC-42` | Same refund in different session creates new refund | `agent.tool_router` | Different `session_id` = different idempotency key | `PASSED` |
 
 ---
 
@@ -120,19 +120,19 @@ Testing covers three layers:
 ---
 
 ## 4. Acceptance Criteria Checklist
-- [ ] All 13 mock adapters implemented and inherit from correct ABCs
-- [ ] All 7 live adapter stubs created (raise `NotImplementedError`)
-- [ ] Factory correctly selects adapters based on `TOOL_MODE`
-- [ ] ToolRouter dispatches all 13 tools correctly
-- [ ] ToolRouter injects `user_id` from session, strips LLM-provided `user_id` (TC-38, TC-39)
-- [ ] `user_id` absent from all Gemini tool schemas (TC-40)
-- [ ] Currency conversion correct at adapter boundary (TC-31 to TC-37)
-- [ ] Idempotency prevents duplicate write operations (TC-41, TC-42)
-- [ ] Gemini function calling schemas generated for all tools
-- [ ] Cross-user data isolation enforced (TC-23)
-- [ ] Circuit breaker and retry logic unit tested (TC-26-29)
-- [ ] Coverage > 90% for the tool layer
-- [ ] No regressions in existing test suites
+- [x] All 13 mock adapters implemented and inherit from correct ABCs
+- [x] All 7 live adapter stubs created (raise `NotImplementedError`)
+- [x] Factory correctly selects adapters based on `TOOL_MODE`
+- [x] ToolRouter dispatches all 13 tools correctly
+- [x] ToolRouter injects `user_id` from session, strips LLM-provided `user_id` (TC-38, TC-39)
+- [x] `user_id` absent from all Gemini tool schemas (TC-40)
+- [x] Currency conversion correct at adapter boundary (TC-31 to TC-37)
+- [x] Idempotency prevents duplicate write operations (TC-41, TC-42)
+- [x] Gemini function calling schemas generated for all tools
+- [x] Cross-user data isolation enforced (TC-23)
+- [x] Circuit breaker and retry logic unit tested (TC-26-29)
+- [x] Coverage > 90% for the tool layer
+- [x] No regressions in existing test suites
 
 ---
 

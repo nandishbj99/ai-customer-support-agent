@@ -53,6 +53,14 @@ def test_tc03_negative_or_zero_refund_amount():
             reason="Defective item delivered",
         )
 
+    with pytest.raises(ValidationError):
+        InitiateRefundInput(
+            txn_id="txn_123",
+            user_id="user_123",
+            amount_inr=5_000_000.0,  # Exceeds ₹1,000,000
+            reason="Excess claim",
+        )
+
 
 def test_tc04_model_json_schema_for_gemini():
     """TC-04: .model_json_schema() generates valid JSON Schema for all tools."""
