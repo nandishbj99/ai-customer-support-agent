@@ -12,7 +12,7 @@ This directory contains all individual feature modules. Each feature folder foll
 
 | Feature ID | Feature Title | Status | Primary Action Needed | Directory Link |
 | :--- | :--- | :--- | :--- | :--- |
-| `FEAT-001-agent-orchestrator` | Core Agent Orchestrator (ReAct Loop + Gemini) | `PROPOSED` | Review ADRs & Design | [FEAT-001](./FEAT-001-agent-orchestrator/spec.md) |
+| `FEAT-001-agent-orchestrator` | Core Agent Orchestrator (ReAct Loop + Gemini) | `COMPLETED` | Verified (104 tests passing) | [FEAT-001](./FEAT-001-agent-orchestrator/spec.md) |
 | `FEAT-002-fintech-tools` | Fintech Tool Layer (Deterministic APIs) | `COMPLETED` | Verified (72 tests passing) | [FEAT-002](./FEAT-002-fintech-tools/spec.md) |
 | `FEAT-003-rag-knowledge-base` | RAG Knowledge Base (Policy Search) | `PROPOSED` | Review ADRs & Design | [FEAT-003](./FEAT-003-rag-knowledge-base/spec.md) |
 | `FEAT-004-hitl-approval` | Human-in-the-Loop Approval System | `PROPOSED` | Review ADRs & Design | [FEAT-004](./FEAT-004-hitl-approval/spec.md) |

@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str = ""
     LLM_MODEL: str = "gemini-2.5-flash"
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    OLLAMA_HOST: str = "http://localhost:11434"
 
     # External Provider Credentials (Live Mode)
     RAZORPAY_KEY_ID: str = ""

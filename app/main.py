@@ -22,6 +22,11 @@ app = FastAPI(
 )
 
 
+from app.api.v1.chat import router as chat_router
+
+app.include_router(chat_router, prefix="/api/v1")
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {
