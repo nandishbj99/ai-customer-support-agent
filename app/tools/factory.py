@@ -15,6 +15,7 @@ from app.tools.mock.escalation import MockEscalationService
 from app.tools.mock.fraud import MockFraudService
 from app.tools.mock.notification import MockNotificationService
 from app.tools.mock.payment import MockPaymentService
+from app.tools.mock.policy import MockPolicyService
 from app.tools.mock.refund import MockRefundService
 from app.tools.mock.ticket import MockTicketService
 from app.tools.mock.transaction import MockTransactionService
@@ -120,5 +121,15 @@ class ToolServiceFactory:
             services["escalation"] = LiveEscalationService()
         else:
             services["escalation"] = MockEscalationService()
+
+        # 9. Policy Knowledge Base (RAG)
+        m = cls.get_tool_mode("policy", active_mode, overrides)
+        if m == "mock" or not settings.GEMINI_API_KEY:
+            from app.rag.embeddings.mock import MockEmbeddingProvider
+            from app.rag.knowledge import PolicyKnowledgeService
+            knowledge = PolicyKnowledgeService(embedding_provider=MockEmbeddingProvider())
+            services["policy"] = MockPolicyService(knowledge_service=knowledge)
+        else:
+            services["policy"] = MockPolicyService()
 
         return services

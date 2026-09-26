@@ -133,3 +133,17 @@ class EscalationServiceBase(ABC):
     ) -> ToolResult:
         """Escalate ticket and context to the human support queue."""
         ...
+
+
+class PolicyServiceBase(ABC):
+    """Abstract interface for knowledge base policy and regulation lookup."""
+
+    @abstractmethod
+    async def search_policy(
+        self,
+        query: str,
+        category: Optional[str] = None,
+        top_k: int = 3,
+    ) -> ToolResult:
+        """Search banking guidelines, FAQs, chargeback rules, and RBI policies."""
+        ...

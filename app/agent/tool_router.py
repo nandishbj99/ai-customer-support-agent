@@ -113,20 +113,16 @@ class ToolRouter:
                     priority=parsed.priority,
                 )
             elif tool_name == "searchPolicy":
-                # Mock fallback until FEAT-003 RAG Engine is attached
-                return ToolResult.ok(
-                    {
-                        "query": parsed.query,
-                        "category": parsed.category,
-                        "results": [
-                            {
-                                "title": "Standard Refund Policy",
-                                "snippet": "Refunds for failed transactions are processed within 3-5 business days. Amounts above ₹10,000 require human supervisor approval.",
-                                "source": "policy_refunds_v2.pdf",
-                            }
-                        ],
-                    }
-                )
+                if "policy" in self.services:
+                    return await self.services["policy"].search_policy(
+                        query=parsed.query,
+                        category=parsed.category,
+                    )
+                return ToolResult.ok({
+                    "query": parsed.query,
+                    "category": parsed.category,
+                    "results": [],
+                })
             else:
                 return ToolResult.fail("UNHANDLED_TOOL", f"No execution handler configured for '{tool_name}'.")
 

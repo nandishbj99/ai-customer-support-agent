@@ -14,7 +14,7 @@ This directory contains all individual feature modules. Each feature folder foll
 | :--- | :--- | :--- | :--- | :--- |
 | `FEAT-001-agent-orchestrator` | Core Agent Orchestrator (ReAct Loop + Gemini) | `COMPLETED` | Verified (104 tests passing) | [FEAT-001](./FEAT-001-agent-orchestrator/spec.md) |
 | `FEAT-002-fintech-tools` | Fintech Tool Layer (Deterministic APIs) | `COMPLETED` | Verified (72 tests passing) | [FEAT-002](./FEAT-002-fintech-tools/spec.md) |
-| `FEAT-003-rag-knowledge-base` | RAG Knowledge Base (Policy Search) | `PROPOSED` | Review ADRs & Design | [FEAT-003](./FEAT-003-rag-knowledge-base/spec.md) |
+| `FEAT-003-rag-knowledge-base` | RAG Knowledge Base (Policy Search) | `COMPLETED` | Verified (115 tests passing) | [FEAT-003](./FEAT-003-rag-knowledge-base/spec.md) |
 | `FEAT-004-hitl-approval` | Human-in-the-Loop Approval System | `PROPOSED` | Review ADRs & Design | [FEAT-004](./FEAT-004-hitl-approval/spec.md) |
 | `FEAT-005-security-audit` | Security, Auth & Audit Logging | `PROPOSED` | Review ADRs & Design | [FEAT-005](./FEAT-005-security-audit/spec.md) |
 | `FEAT-006-conversation-api` | Conversation API & Interface | `PROPOSED` | Review ADRs & Design | [FEAT-006](./FEAT-006-conversation-api/spec.md) |

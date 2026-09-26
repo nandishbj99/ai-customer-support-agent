@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     OLLAMA_HOST: str = "http://localhost:11434"
 
+    # Embedding & RAG Settings (FEAT-003)
+    EMBED_PROVIDER: str = "google"
+    EMBED_MODEL: str = "text-embedding-004"
+    CHROMA_PERSIST_DIRECTORY: str = "./data/chroma"
+
     # External Provider Credentials (Live Mode)
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
