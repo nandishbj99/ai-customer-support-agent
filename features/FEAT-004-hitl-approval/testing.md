@@ -33,3 +33,18 @@
 ## 4. Security & Load Testing
 *   **Security:** Verify only authorized roles (e.g., `agent`, `manager`) can transition approval states.
 *   **Load Testing:** Populate the Redis queue with 5000+ pending requests and measure API latency for the dashboard list endpoint.
+
+---
+
+## 5. Verification Results (Automated Test Execution)
+
+**Date of Execution:** 2026-09-26  
+**Status:** `ALL PASSED` (27 / 27 tests in `tests/hitl/`, 142 / 142 project-wide)
+
+| Test Suite | Tests | Result | Coverage Area |
+| :--- | :--- | :--- | :--- |
+| `tests/hitl/test_state_machine.py` | 7 | `PASSED` | Transitions FSM (approve, reject, escalate, mark_executed, mark_failed, terminal states, callbacks) |
+| `tests/hitl/test_rules_engine.py` | 8 | `PASSED` | Threshold evaluation (₹10,000 threshold, ₹100,000 executive tier, account freeze/close, reversal > ₹50,000, fraud overrides, VIP priority/SLA adjustment) |
+| `tests/hitl/test_service.py` | 6 | `PASSED` | DB persistence, request queueing, priority ordering, tool execution on approval, role enforcement (403), audit logs, SLA auto-escalation |
+| `tests/hitl/test_approvals_api.py` | 3 | `PASSED` | FastAPI endpoints (`GET /api/v1/approvals`, `GET /{id}`, `POST /{id}/approve`, `POST /{id}/reject`, `POST /{id}/escalate`, `POST /auto-escalate`) |
+| `tests/hitl/test_tool_router_interception.py` | 3 | `PASSED` | Interception in ToolRouter, bypass flag handling, and low-threshold direct execution |

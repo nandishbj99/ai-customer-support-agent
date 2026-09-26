@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from sqlalchemy import (
     BigInteger,
@@ -53,6 +53,9 @@ class User(Base):
     )
     support_tickets: Mapped[List["SupportTicket"]] = relationship(
         "SupportTicket", back_populates="user", cascade="all, delete-orphan"
+    )
+    approval_requests: Mapped[List["ApprovalRequest"]] = relationship(
+        "ApprovalRequest", back_populates="user", cascade="all, delete-orphan"
     )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -268,5 +271,141 @@ class SupportTicket(Base):
             "priority": self.priority,
             "status": self.status,
             "external_ticket_id": self.external_ticket_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ApprovalRequest(Base):
+    __tablename__ = "approval_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    session_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tool_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    tool_arguments: Mapped[Dict[str, Any]] = mapped_column(JsonType, nullable=False, default=dict)
+    context: Mapped[Dict[str, Any]] = mapped_column(JsonType, nullable=False, default=dict)
+    status: Mapped[str] = mapped_column(
+        String(30), default="PENDING", nullable=False, index=True
+    )  # PENDING, APPROVED, REJECTED, ESCALATED, EXECUTED, FAILED
+    amount_paise: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, index=True)
+    required_role: Mapped[str] = mapped_column(String(50), default="agent", nullable=False)
+    priority: Mapped[int] = mapped_column(BigInteger, default=5, nullable=False)  # 1=critical, 10=low
+    approver_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    sla_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_result: Mapped[Optional[Dict[str, Any]]] = mapped_column(JsonType, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="approval_requests")
+    audit_logs: Mapped[List["ApprovalAuditLog"]] = relationship(
+        "ApprovalAuditLog",
+        back_populates="approval_request",
+        cascade="all, delete-orphan",
+        order_by="ApprovalAuditLog.created_at",
+    )
+
+    def to_dict(self) -> Dict[str, Any]:
+        c_at = self.__dict__.get("created_at")
+        u_at = self.__dict__.get("updated_at")
+        sla = self.__dict__.get("sla_expires_at")
+        return {
+            "id": str(self.id),
+            "session_id": self.session_id,
+            "user_id": str(self.user_id),
+            "tool_name": self.tool_name,
+            "tool_arguments": self.tool_arguments,
+            "context": self.context,
+            "status": self.status,
+            "amount_paise": self.amount_paise,
+            "amount_inr": (self.amount_paise / 100.0) if self.amount_paise is not None else None,
+            "required_role": self.required_role,
+            "priority": self.priority,
+            "approver_id": self.approver_id,
+            "rejection_reason": self.rejection_reason,
+            "sla_expires_at": sla.isoformat() if sla else None,
+            "execution_result": self.execution_result,
+            "created_at": c_at.isoformat() if c_at else None,
+            "updated_at": u_at.isoformat() if u_at else None,
+        }
+
+
+class ApprovalRule(Base):
+    __tablename__ = "approval_rules"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    rule_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    tool_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    condition_type: Mapped[str] = mapped_column(
+        String(50), default="amount_threshold", nullable=False
+    )  # amount_threshold, always, parameter_match
+    threshold_amount_paise: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    condition_expression: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    required_role: Mapped[str] = mapped_column(String(50), default="agent", nullable=False)
+    priority: Mapped[int] = mapped_column(BigInteger, default=10, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": str(self.id),
+            "rule_name": self.rule_name,
+            "tool_name": self.tool_name,
+            "condition_type": self.condition_type,
+            "threshold_amount_paise": self.threshold_amount_paise,
+            "threshold_amount_inr": (self.threshold_amount_paise / 100.0) if self.threshold_amount_paise is not None else None,
+            "condition_expression": self.condition_expression,
+            "required_role": self.required_role,
+            "priority": self.priority,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ApprovalAuditLog(Base):
+    __tablename__ = "approval_audit_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    approval_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("approval_requests.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    action: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # CREATED, ESCALATED, APPROVED, REJECTED, EXECUTED, FAILED
+    actor_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    actor_role: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+    # Relationships
+    approval_request: Mapped["ApprovalRequest"] = relationship(
+        "ApprovalRequest", back_populates="audit_logs"
+    )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": str(self.id),
+            "approval_id": str(self.approval_id),
+            "action": self.action,
+            "actor_id": self.actor_id,
+            "actor_role": self.actor_role,
+            "comment": self.comment,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

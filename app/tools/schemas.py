@@ -17,6 +17,12 @@ class ToolResult(BaseModel):
     data: Optional[Dict[str, Any]] = Field(default=None, description="Result payload if success=True")
     error: Optional[ToolError] = Field(default=None, description="Error payload if success=False")
 
+    def is_success(self) -> bool:
+        return bool(self.success)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.model_dump()
+
     @classmethod
     def ok(cls, data: Dict[str, Any]) -> "ToolResult":
         return cls(success=True, data=data, error=None)

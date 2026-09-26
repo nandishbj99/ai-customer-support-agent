@@ -131,7 +131,7 @@ All active, upcoming, and completed features are tracked in [`features/`](../fea
 | `FEAT-001-agent-orchestrator` | Core Agent Orchestrator | Team | `COMPLETED` | 2026-09-24 | [FEAT-001](../features/FEAT-001-agent-orchestrator/spec.md) |
 | `FEAT-002-fintech-tools` | Fintech Tool Layer | Team | `COMPLETED` | 2026-09-23 | [FEAT-002](../features/FEAT-002-fintech-tools/spec.md) |
 | `FEAT-003-rag-knowledge-base` | RAG Knowledge Base | Team | `COMPLETED` | 2026-09-26 | [FEAT-003](../features/FEAT-003-rag-knowledge-base/spec.md) |
-| `FEAT-004-hitl-approval` | Human-in-the-Loop Approval | Team | `PROPOSED` | TBD | [FEAT-004](../features/FEAT-004-hitl-approval/spec.md) |
+| `FEAT-004-hitl-approval` | Human-in-the-Loop Approval | Team | `COMPLETED` | 2026-09-26 | [FEAT-004](../features/FEAT-004-hitl-approval/spec.md) |
 | `FEAT-005-security-audit` | Security & Audit Logging | Team | `PROPOSED` | TBD | [FEAT-005](../features/FEAT-005-security-audit/spec.md) |
 | `FEAT-006-conversation-api` | Conversation API & Interface | Team | `PROPOSED` | TBD | [FEAT-006](../features/FEAT-006-conversation-api/spec.md) |
 

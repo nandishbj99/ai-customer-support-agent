@@ -78,6 +78,7 @@ async def test_orchestrator_react_with_tool_call():
         tool_name="getAccountBalance",
         arguments={"account_id": "acc_001"},
         session_user_id="user_001",
+        session_id="sess_123",
     )
 
 

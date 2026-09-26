@@ -7,10 +7,17 @@ from app.tools.schemas import ToolResult
 
 
 class ToolRouter:
-    """Dispatches tool calls, enforces session-injected user_id, and handles idempotency."""
+    """Dispatches tool calls, enforces session-injected user_id, handles idempotency and HITL interception."""
 
-    def __init__(self, services: Dict[str, Any]):
+    def __init__(
+        self,
+        services: Dict[str, Any],
+        approval_service: Optional[Any] = None,
+        rules_engine: Optional[Any] = None,
+    ):
         self.services = services
+        self.approval_service = approval_service
+        self.rules_engine = rules_engine
 
     async def execute(
         self,
@@ -18,6 +25,7 @@ class ToolRouter:
         arguments: Dict[str, Any],
         session_user_id: str,
         session_id: Optional[str] = None,
+        bypass_hitl: bool = False,
     ) -> ToolResult:
         # Check unknown tool (TC-18)
         if tool_name not in ToolRegistry.get_registered_tool_names():
@@ -29,6 +37,43 @@ class ToolRouter:
         # SECURITY RULE: Invalidate/override any LLM-provided user_id with verified session_user_id
         args = dict(arguments or {})
         args["user_id"] = session_user_id
+
+        # HITL INTERCEPTION: Check if operation requires human operator authorization
+        if not bypass_hitl and (self.approval_service or self.rules_engine):
+            from app.hitl.rules_engine import ApprovalRulesEngine
+            engine = self.rules_engine or (self.approval_service.rules_engine if hasattr(self.approval_service, "rules_engine") else ApprovalRulesEngine())
+            eval_res = await engine.evaluate(
+                tool_name=tool_name,
+                arguments=args,
+                context={"session_id": session_id},
+            )
+            if eval_res.requires_approval:
+                approval_id = None
+                if self.approval_service:
+                    req = await self.approval_service.create_request(
+                        session_id=session_id or "default_session",
+                        user_id=session_user_id,
+                        tool_name=tool_name,
+                        tool_arguments=args,
+                        context={"reasoning": eval_res.reason},
+                        evaluation=eval_res,
+                    )
+                    approval_id = str(req.id)
+                else:
+                    import uuid
+                    approval_id = f"appr_{uuid.uuid4().hex[:12]}"
+
+                return ToolResult.ok(
+                    {
+                        "status": "pending_approval",
+                        "requires_hitl": True,
+                        "approval_id": approval_id,
+                        "tool_name": tool_name,
+                        "required_role": eval_res.required_role,
+                        "priority": eval_res.priority,
+                        "message": eval_res.reason or f"Operation '{tool_name}' requires supervisor authorization.",
+                    }
+                )
 
         # Auto-generate idempotency key for mutations if omitted
         if tool_name == "initiateRefund" and not args.get("idempotency_key"):

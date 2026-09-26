@@ -162,6 +162,7 @@ class AgentOrchestrator:
                         tool_name=tc.name,
                         arguments=tc.arguments,
                         session_user_id=customer_id,
+                        session_id=session_id,
                     )
 
                     messages.append({
