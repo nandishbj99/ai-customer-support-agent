@@ -409,3 +409,39 @@ class ApprovalAuditLog(Base):
             "comment": self.comment,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    actor_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    actor_role: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    session_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    resource: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="SUCCESS", nullable=False)  # SUCCESS, FAILURE, BLOCKED
+    details: Mapped[Dict[str, Any]] = mapped_column(JsonType, nullable=False, default=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        t_stamp = self.__dict__.get("timestamp")
+        return {
+            "id": str(self.id),
+            "timestamp": t_stamp.isoformat() if t_stamp else None,
+            "event_type": self.event_type,
+            "actor_id": self.actor_id,
+            "actor_role": self.actor_role,
+            "ip_address": self.ip_address,
+            "session_id": self.session_id,
+            "resource": self.resource,
+            "action": self.action,
+            "status": self.status,
+            "details": self.details,
+        }

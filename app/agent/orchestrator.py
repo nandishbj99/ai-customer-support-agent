@@ -89,12 +89,29 @@ class AgentOrchestrator:
         tool_calls_made: List[str] = []
         escalated = False
 
-        logger.info(
-            "react_loop_started",
-            session_id=session_id,
-            customer_id=customer_id,
-            model=self.llm_provider.get_model_name(),
-        )
+        # PROMPT INJECTION DEFENSE (FR-13, ADR-04)
+        from app.security.prompt_guard import InjectionRiskLevel, prompt_guard
+        assessment = prompt_guard.evaluate(message)
+        if assessment.risk_level == InjectionRiskLevel.BLOCKED:
+            logger.warn(
+                "prompt_injection_blocked",
+                session_id=session_id,
+                customer_id=customer_id,
+                patterns=assessment.matched_patterns,
+            )
+            return await self._finalize(
+                session_id,
+                customer_id,
+                AgentResult(
+                    session_id=session_id,
+                    response=assessment.rejection_message or "Request blocked due to security policy violation.",
+                    status="blocked",
+                    confidence_score=1.0,
+                    escalated=False,
+                    iterations=0,
+                ),
+                messages,
+            )
 
         for iteration in range(self.max_iterations):
             try:

@@ -53,5 +53,14 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""
 
+    # Security & Auth Settings (FEAT-005)
+    JWT_SECRET_KEY: str = "fintech_super_secret_jwt_key_for_development_32bytes_long"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    INTERNAL_API_KEYS: str = "test-internal-api-key-1,test-internal-api-key-2"
+    RATE_LIMIT_PER_MINUTE: int = 60
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
+
 
 settings = Settings()
